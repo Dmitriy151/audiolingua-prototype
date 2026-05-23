@@ -280,5 +280,178 @@
 
     <script src="js/mock-data.js"></script>
     <script src="js/app.js"></script>
+    
+    <script>
+        /**
+ * 🔗 AudioLingua Backend Integration
+ * Подключение к FastAPI бэкенду для генерации аудиоуроков
+ */
+
+const API = {
+    BASE: 'http://127.0.0.1:8000/api',
+    OUTPUT: 'http://127.0.0.1:8000/output'
+};
+
+// 🔹 Инициализация после загрузки DOM
+document.addEventListener('DOMContentLoaded', () => {
+    bindEventListeners();
+});
+
+function bindEventListeners() {
+    // Кнопка генерации в настройках
+    const generateBtn = document.getElementById('btn-generate');
+    if (generateBtn) {
+        generateBtn.addEventListener('click', handleGenerateLesson);
+    }
+
+    // Кнопка "Новый урок" в плеере
+    const newLessonBtn = document.getElementById('btn-new-lesson');
+    if (newLessonBtn) {
+        newLessonBtn.addEventListener('click', () => navigateToStep('step-upload'));
+    }
+
+    // Навигация по шагам (если ещё не реализована)
+    const btnNext = document.getElementById('btn-next-settings');
+    const btnBack = document.getElementById('btn-back-upload');
+    
+    if (btnNext) {
+        btnNext.addEventListener('click', () => {
+            const text = document.getElementById('text-input')?.value?.trim();
+            if (text) navigateToStep('step-settings');
+            else alert('Введите текст урока');
+        });
+    }
+    if (btnBack) {
+        btnBack.addEventListener('click', () => navigateToStep('step-upload'));
+    }
+}
+
+// 🔹 Основная функция генерации
+async function handleGenerateLesson() {
+    const textarea = document.getElementById('text-input');
+    const text = textarea?.value?.trim();
+    
+    if (!text) {
+        alert('Введите текст для озвучки');
+        return navigateToStep('step-upload');
+    }
+
+    // UI: переход к прогрессу
+    navigateToStep('step-progress');
+    updateProgress(10, 'step-1');
+
+    try {
+        // 1️⃣ Запрос к бэкенду
+        updateProgress(25, 'step-2');
+        
+        const response = await fetch(`${API.BASE}/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                text: text,
+                voice_en: 'nick',      // Можно брать из селектов настроек
+                voice_ru: 'alena',
+                include_explanations: true
+            })
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`Server error ${response.status}: ${errText}`);
+        }
+
+        const data = await response.json();
+        const lessonId = data.lesson_id;
+        
+        updateProgress(50, 'step-3');
+
+        // 2️⃣ Загрузка manifest.json
+        const manifestUrl = `${API.OUTPUT}/${lessonId}/manifest.json`;
+        const manifestRes = await fetch(manifestUrl);
+        
+        if (!manifestRes.ok) throw new Error('Manifest file not found');
+        const manifest = await manifestRes.json();
+
+        updateProgress(75, 'step-4');
+
+        // 3️⃣ Рендер плеера
+        renderLessonPlayer(lessonId, manifest, text);
+        
+        updateProgress(100);
+        
+        // 4️⃣ Показ финального шага
+        setTimeout(() => navigateToStep('step-player'), 400);
+
+    } catch (error) {
+        console.error('❌ Generation failed:', error);
+        alert(`Ошибка генерации: ${error.message}`);
+        navigateToStep('step-settings');
+    }
+}
+
+// 🔹 Рендер карточек с аудио
+function renderLessonPlayer(lessonId, manifest, originalText) {
+    const container = document.querySelector('.text-display');
+    if (!container) return;
+
+    // Простая разбивка на предложения (можно улучшить)
+    const sentences = originalText.split(/(?<=[.!?])\s+/).filter(s => s.trim());
+    
+    container.innerHTML = sentences.map((sentence, index) => {
+        // Берём соответствующие файлы из манифеста
+        const enFile = manifest.en?.[index] || manifest.en?.[0];
+        const ruFile = manifest.ru?.[index] || manifest.ru?.[0];
+        
+        return `
+            <div class="sentence-block ${index === 0 ? 'active' : ''}" data-index="${index}">
+                <div class="sentence-original">${escapeHtml(sentence)}</div>
+                <div class="sentence-translation">${manifest.translation || '—'}</div>
+                
+                ${enFile ? `
+                    <div class="audio-row">
+                        <span class="lang-badge">🇬🇧 EN</span>
+                        <audio controls src="${API.OUTPUT}/${lessonId}/${enFile}"></audio>
+                    </div>` : ''}
+                
+                ${ruFile ? `
+                    <div class="audio-row">
+                        <span class="lang-badge">🇷🇺 RU</span>
+                        <audio controls src="${API.OUTPUT}/${lessonId}/${ruFile}"></audio>
+                    </div>` : ''}
+            </div>
+        `;
+    }).join('');
+    
+    // Обновляем заголовок урока
+    const title = document.querySelector('#step-player h2');
+    if (title) title.textContent = `Урок #${lessonId.slice(0, 8)}...`;
+}
+
+// 🔹 Вспомогательные функции
+function navigateToStep(stepId) {
+    document.querySelectorAll('.step').forEach(step => {
+        step.classList.remove('active');
+    });
+    const target = document.getElementById(stepId);
+    if (target) target.classList.add('active');
+}
+
+function updateProgress(percent, stepId) {
+    const bar = document.getElementById('progress-fill');
+    if (bar) bar.style.width = `${percent}%`;
+    
+    if (stepId) {
+        document.querySelectorAll('.progress-step').forEach(s => s.classList.remove('active'));
+        document.getElementById(stepId)?.classList.add('active');
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+    </script>
+
 </body>
 </html>

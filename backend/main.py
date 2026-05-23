@@ -8,6 +8,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
+import httpx
+import urllib.parse
+import subprocess
+import tempfile
 
 # 1. Загрузка настроек
 load_dotenv()
@@ -17,6 +21,8 @@ OUTPUT_DIR = "output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 app = FastAPI(title="AudioLingua Backend")
+from fastapi.staticfiles import StaticFiles
+app.mount("/output", StaticFiles(directory="output"), name="output")
 
 # 2. Настройка CORS (чтобы фронтенд мог обращаться к бэкенду)
 app.add_middleware(
@@ -47,17 +53,55 @@ def yandex_translate(text: str) -> str:
     return resp.json()["translations"][0]["text"]
 
 def yandex_tts(text: str, voice: str, lang: str, filename: str) -> int:
-    url = "https://tts.api.cloud.yandex.net/speech/v1/tts:synthesize"
-    headers = {"Authorization": f"Api-Key {API_KEY}"}
-    data = {"text": text, "lang": lang, "voice": voice, "format": "mp3", "sampleRateHertz": "24000"}
-    resp = requests.post(url, headers=headers, data=data)
-    resp.raise_for_status()
-    path = os.path.join(OUTPUT_DIR, filename)
-    with open(path, "wb") as f:
-        f.write(resp.content)
-    # Примерная длительность в мс (для упрощения MVP)
-    return len(text) * 60  # ~60мс на символ
-
+    """
+    Универсальный синтез речи. 
+    Работает с любым языком без переписывания кода.
+    """
+    
+    # 1. Абсолютный путь к выходному файлу
+    output_path = os.path.abspath(os.path.join(OUTPUT_DIR, filename))
+    output_dir = os.path.dirname(output_path)
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # 2. Универсальное кодирование данных (работает для ВСЕХ языков)
+    # Это превращает спецсимволы и кириллицу в безопасный формат для HTTP
+    payload = urllib.parse.urlencode({
+        "text": text,
+        "lang": lang,
+        "voice": voice,
+        "format": "mp3",
+        "sampleRateHertz": "48000",
+        "folderId": FOLDER_ID
+    })
+    
+    # 3. Формируем команду curl.
+    # Мы передаем уже закодированный "payload" целиком.
+    curl_cmd = (
+        f'curl -s -o "{output_path}" '
+        f'-H "Authorization: Api-Key {API_KEY}" '
+        f'-H "Content-Type: application/x-www-form-urlencoded" '
+        f'-d "{payload}" '  # <-- Здесь безопасные данные
+        f'"https://tts.api.cloud.yandex.net/speech/v1/tts:synthesize"'
+    )
+    
+    print(f"🔊 TTS: '{text[:30]}...' -> {filename}")
+    
+    # 4. Запускаем
+    exit_code = os.system(f'cd /d "{output_dir}" && {curl_cmd}')
+    
+    # 5. Проверяем результат
+    if os.path.exists(output_path):
+        file_size = os.path.getsize(output_path)
+        if file_size > 0:
+            print(f"✅ TTS saved: {filename} ({file_size} bytes)")
+            return len(text) * 60
+        else:
+            print(f"❌ Empty file: {output_path}")
+            raise Exception("Generated file is empty")
+    else:
+        print(f"❌ File not created: {output_path}")
+        raise Exception("File not created")
+    
 def split_sentences(text: str) -> list:
     # Простое разбиение по точкам/восклицательным/вопросительным знакам
     return [s.strip() for s in re.split(r'(?<=[.!?])\s+', text) if s.strip()]
