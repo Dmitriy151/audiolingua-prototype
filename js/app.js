@@ -1,11 +1,17 @@
 // AudioLingua Prototype - Main Application Logic
+// Интеграция с реальным бэкендом
 
 class AudioLinguaApp {
+    // 🔗 API endpoints
+    static API_BASE = 'http://127.0.0.1:8000/api';
+    static OUTPUT_BASE = 'http://127.0.0.1:8000/output';
+    
     constructor() {
         this.currentStep = 'upload';
         this.currentSentence = 0;
         this.isPlaying = false;
         this.lessonData = null;
+        this.lessonId = null;
         
         this.init();
     }
@@ -22,9 +28,20 @@ class AudioLinguaApp {
         });
         
         // Navigation
-        document.getElementById('btn-next-settings').addEventListener('click', () => this.goToStep('settings'));
-        document.getElementById('btn-back-upload').addEventListener('click', () => this.goToStep('upload'));
-        document.getElementById('btn-generate').addEventListener('click', () => this.startGeneration());
+        const btnNextSettings = document.getElementById('btn-next-settings');
+        if (btnNextSettings) {
+            btnNextSettings.addEventListener('click', () => this.goToStep('settings'));
+        }
+        
+        const btnBack = document.getElementById('btn-back-upload');
+        if (btnBack) {
+            btnBack.addEventListener('click', () => this.goToStep('upload'));
+        }
+        
+        const btnGenerate = document.getElementById('btn-generate');
+        if (btnGenerate) {
+            btnGenerate.addEventListener('click', () => this.startGeneration());
+        }
         
         // Speed buttons
         document.querySelectorAll('.speed-btn').forEach(btn => {
@@ -32,54 +49,102 @@ class AudioLinguaApp {
         });
         
         // Player controls
-        document.getElementById('btn-play').addEventListener('click', () => this.togglePlay());
-        document.getElementById('btn-prev-sentence').addEventListener('click', () => this.prevSentence());
-        document.getElementById('btn-next-sentence').addEventListener('click', () => this.nextSentence());
-        document.getElementById('btn-speed').addEventListener('click', () => this.toggleSpeed());
+        const btnPlay = document.getElementById('btn-play');
+        if (btnPlay) {
+            btnPlay.addEventListener('click', () => this.togglePlay());
+        }
         
-        // Sentence blocks
-        document.querySelectorAll('.sentence-block').forEach((block, index) => {
-            block.addEventListener('click', () => this.jumpToSentence(index));
-        });
+        const btnPrev = document.getElementById('btn-prev-sentence');
+        if (btnPrev) {
+            btnPrev.addEventListener('click', () => this.prevSentence());
+        }
+        
+        const btnNextSentence = document.getElementById('btn-next-sentence');
+        if (btnNextSentence) {
+            btnNextSentence.addEventListener('click', () => this.nextSentence());
+        }
+        
+        const btnSpeed = document.getElementById('btn-speed');
+        if (btnSpeed) {
+            btnSpeed.addEventListener('click', () => this.toggleSpeed());
+        }
+        
+        // Sentence blocks (делегирование событий)
+        const textDisplay = document.querySelector('.text-display');
+        if (textDisplay) {
+            textDisplay.addEventListener('click', (e) => {
+                const block = e.target.closest('.sentence-block');
+                if (block) {
+                    const index = parseInt(block.dataset.index);
+                    this.jumpToSentence(index);
+                }
+            });
+        }
         
         // Export modal
-        document.getElementById('btn-export').addEventListener('click', () => this.openExportModal());
-        document.querySelector('.modal-close').addEventListener('click', () => this.closeExportModal());
-        document.getElementById('btn-download').addEventListener('click', () => this.downloadFiles());
+        const btnExport = document.getElementById('btn-export');
+        if (btnExport) {
+            btnExport.addEventListener('click', () => this.openExportModal());
+        }
+        
+        const modalClose = document.querySelector('.modal-close');
+        if (modalClose) {
+            modalClose.addEventListener('click', () => this.closeExportModal());
+        }
+        
+        const btnDownload = document.getElementById('btn-download');
+        if (btnDownload) {
+            btnDownload.addEventListener('click', () => this.downloadFiles());
+        }
         
         // New lesson
-        document.getElementById('btn-new-lesson').addEventListener('click', () => this.resetToUpload());
+        const btnNewLesson = document.getElementById('btn-new-lesson');
+        if (btnNewLesson) {
+            btnNewLesson.addEventListener('click', () => this.resetToUpload());
+        }
         
         // Text input stats
-        document.getElementById('text-input').addEventListener('input', () => this.updateStats());
+        const textInput = document.getElementById('text-input');
+        if (textInput) {
+            textInput.addEventListener('input', () => this.updateStats());
+        }
     }
     
     switchTab(tabName) {
-        // Update tabs
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
+        if (activeTab) activeTab.classList.add('active');
         
-        // Update content
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.getElementById(`tab-${tabName}`).classList.add('active');
+        const activeContent = document.getElementById(`tab-${tabName}`);
+        if (activeContent) activeContent.classList.add('active');
     }
     
     goToStep(stepName) {
         document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-        document.getElementById(`step-${stepName}`).classList.add('active');
-        this.currentStep = stepName;
+        const targetStep = document.getElementById(`step-${stepName}`);
+        if (targetStep) {
+            targetStep.classList.add('active');
+            this.currentStep = stepName;
+        }
     }
     
     updateStats() {
-        const text = document.getElementById('text-input').value;
+        const textInput = document.getElementById('text-input');
+        if (!textInput) return;
+        
+        const text = textInput.value;
         const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
         const words = text.trim().split(/\s+/).filter(w => w.length > 0);
         
-        document.querySelector('.text-stats').innerHTML = `
-            <span>📊 ${sentences.length} ${this.declension(sentences.length, 'предложение', 'предложения', 'предложений')}</span>
-            <span>✍️ ${words.length} ${this.declension(words.length, 'слово', 'слова', 'слов')}</span>
-            <span>⏱️ ~${Math.ceil(words.length / 130)} мин</span>
-        `;
+        const statsElement = document.querySelector('.text-stats');
+        if (statsElement) {
+            statsElement.innerHTML = `
+                <span>📊 ${sentences.length} ${this.declension(sentences.length, 'предложение', 'предложения', 'предложений')}</span>
+                <span>✍️ ${words.length} ${this.declension(words.length, 'слово', 'слова', 'слов')}</span>
+                <span>⏱️ ~${Math.ceil(words.length / 130)} мин</span>
+            `;
+        }
     }
     
     declension(n, one, two, five) {
@@ -91,45 +156,154 @@ class AudioLinguaApp {
         return five;
     }
     
+    // 🔗 РЕАЛЬНАЯ ГЕНЕРАЦИЯ (вместо моков)
     async startGeneration() {
-        this.goToStep('progress');
+        const textInput = document.getElementById('text-input');
+        const text = textInput ? textInput.value.trim() : '';
         
-        const steps = mockGenerationSteps;
-        const progressFill = document.getElementById('progress-fill');
-        
-        for (let i = 0; i < steps.length; i++) {
-            // Update active step
-            document.querySelectorAll('.progress-step').forEach((step, idx) => {
-                step.classList.remove('active');
-                if (idx <= i) {
-                    step.classList.add('active');
-                    step.textContent = '✓ ' + step.textContent.replace(/^[✓→]\s*/, '');
-                }
-            });
-            
-            // Update progress bar
-            const progress = ((i + 1) / steps.length) * 100;
-            progressFill.style.width = progress + '%';
-            
-            // Wait for simulation
-            await this.sleep(steps[i].duration);
+        if (!text) {
+            alert('Введите текст урока');
+            return this.goToStep('upload');
         }
         
-        // Show player after generation
-        setTimeout(() => {
+        this.goToStep('progress');
+        
+        try {
+            // 📡 Запрос к реальному бэкенду
+            console.log('📡 Отправка запроса на генерацию...');
+            
+            const response = await fetch(`${AudioLinguaApp.API_BASE}/generate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    text: text,
+                    voice_en: 'nick',
+                    voice_ru: 'alena',
+                    include_explanations: true
+                })
+            });
+            
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Server ${response.status}: ${errText}`);
+            }
+            
+            const data = await response.json();
+            this.lessonId = data.lesson_id;
+            
+            console.log('✅ Урок создан:', this.lessonId);
+            
+            // 📥 Загружаем manifest с сервера
+            const manifestRes = await fetch(`${AudioLinguaApp.OUTPUT_BASE}/${this.lessonId}/manifest.json`);
+            if (!manifestRes.ok) throw new Error('Manifest not found');
+            const manifest = await manifestRes.json();
+            
+            console.log('📋 Manifest загружен:', manifest);
+            
+            // 🔄 Преобразуем manifest в формат для плеера
+            this.lessonData = this.transformManifestToLessonData(manifest, text);
+            
+            // 🎯 Показываем плеер
             this.showPlayer();
-        }, 500);
+            
+        } catch (error) {
+            console.error('❌ Generation failed:', error);
+            alert(`Ошибка генерации: ${error.message}`);
+            this.goToStep('settings');
+        }
+    }
+    
+    // 🔹 Преобразует manifest в структуру для плеера
+    transformManifestToLessonData(manifest, originalText) {
+        const sentences = originalText.split(/(?<=[.!?])\s+/).filter(s => s.trim());
+        
+        return {
+            id: manifest.id,
+            title: manifest.title || `Урок #${manifest.id.slice(0, 8)}`,
+            sentences: sentences.map((text, index) => ({
+                id: index,
+                text: text,
+                translation: manifest.translation || '',
+                audio: {
+                    en: manifest.en?.[index] ? `${AudioLinguaApp.OUTPUT_BASE}/${manifest.id}/${manifest.en[index]}` : null,
+                    ru: manifest.ru?.[index] ? `${AudioLinguaApp.OUTPUT_BASE}/${manifest.id}/${manifest.ru[index]}` : null
+                },
+                timestamps: {
+                    en: { start: 0, end: 5 },
+                    exp: { start: 0, end: 5 }
+                }
+            })),
+            vocabulary: manifest.vocabulary || []
+        };
     }
     
     showPlayer() {
         this.goToStep('player');
-        this.lessonData = demoLesson;
         this.currentSentence = 0;
-        this.highlightSentence(0);
+        
+        // 🎨 Рендерим карточки с реальными аудио
+        this.renderLessonPlayer();
+        
+        // 🎧 Инициализируем аудио-плееры
+        this.initRealAudioPlayers();
+    }
+    
+    // 🔹 Рендер карточек с аудио
+    renderLessonPlayer() {
+        const container = document.querySelector('.text-display');
+        if (!container || !this.lessonData) return;
+        
+        container.innerHTML = this.lessonData.sentences.map((sentence, index) => `
+            <div class="sentence-block ${index === 0 ? 'active' : ''}" data-index="${index}">
+                <div class="sentence-original">${this.escapeHtml(sentence.text)}</div>
+                <div class="sentence-translation">${this.escapeHtml(sentence.translation)}</div>
+                
+                ${sentence.audio.en ? `
+                    <div class="audio-row">
+                        <span class="lang-badge">🇬🇧 EN</span>
+                        <audio controls src="${sentence.audio.en}"></audio>
+                    </div>` : ''}
+                
+                ${sentence.audio.ru ? `
+                    <div class="audio-row">
+                        <span class="lang-badge">🇷 RU</span>
+                        <audio controls src="${sentence.audio.ru}"></audio>
+                    </div>` : ''}
+            </div>
+        `).join('');
+        
+        // Обновляем заголовок урока
+        const titleElement = document.querySelector('#step-player h2');
+        if (titleElement && this.lessonData.title) {
+            titleElement.textContent = this.lessonData.title;
+        }
+    }
+    
+    // 🔹 Инициализация аудио-плееров
+    initRealAudioPlayers() {
+        const audios = document.querySelectorAll('.sentence-block audio');
+        
+        audios.forEach((audio, index) => {
+            audio.addEventListener('ended', () => {
+                if (this.isPlaying && index < audios.length - 1) {
+                    this.nextSentence();
+                    setTimeout(() => {
+                        const nextAudio = audios[index + 1];
+                        if (nextAudio) nextAudio.play();
+                    }, 500);
+                } else if (index === audios.length - 1) {
+                    this.isPlaying = false;
+                    const btnPlay = document.getElementById('btn-play');
+                    if (btnPlay) btnPlay.textContent = '▶';
+                }
+            });
+        });
     }
     
     togglePlay() {
         const btn = document.getElementById('btn-play');
+        if (!btn) return;
+        
         this.isPlaying = !this.isPlaying;
         
         if (this.isPlaying) {
@@ -137,31 +311,29 @@ class AudioLinguaApp {
             this.playCurrentSentence();
         } else {
             btn.textContent = '▶';
+            // Пауза всех аудио
+            document.querySelectorAll('.sentence-block audio').forEach(audio => {
+                audio.pause();
+            });
         }
     }
     
     playCurrentSentence() {
         if (!this.isPlaying) return;
         
-        const sentence = this.lessonData.sentences[this.currentSentence];
+        const audios = document.querySelectorAll('.sentence-block audio');
+        // Ищем активное аудио для текущего предложения (берем русское как основное)
+        const currentIndex = this.currentSentence * 2 + 1; // RU обычно второй
+        const currentAudio = audios[currentIndex] || audios[this.currentSentence * 2];
         
-        // Simulate audio playback with timeouts
-        this.simulateAudioPlayback(sentence, () => {
-            if (this.isPlaying && this.currentSentence < this.lessonData.sentences.length - 1) {
-                this.nextSentence();
-                setTimeout(() => this.playCurrentSentence(), 500);
-            } else {
+        if (currentAudio) {
+            currentAudio.play().catch(err => {
+                console.warn('Autoplay blocked:', err);
                 this.isPlaying = false;
-                document.getElementById('btn-play').textContent = '▶';
-            }
-        });
-    }
-    
-    simulateAudioPlayback(sentence, callback) {
-        // In real app, this would play actual audio
-        // For prototype, we just simulate timing
-        const totalTime = (sentence.timestamps.exp.end - sentence.timestamps.en.start) * 1000;
-        setTimeout(callback, totalTime);
+                const btnPlay = document.getElementById('btn-play');
+                if (btnPlay) btnPlay.textContent = '▶';
+            });
+        }
     }
     
     nextSentence() {
@@ -188,7 +360,6 @@ class AudioLinguaApp {
             block.classList.toggle('active', i === index);
         });
         
-        // Scroll into view
         const activeBlock = document.querySelector(`.sentence-block[data-index="${index}"]`);
         if (activeBlock) {
             activeBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -203,6 +374,8 @@ class AudioLinguaApp {
     
     toggleSpeed() {
         const btn = document.getElementById('btn-speed');
+        if (!btn) return;
+        
         const speeds = ['0.8x', '1.0x', '1.2x'];
         const current = speeds.indexOf(btn.textContent);
         const next = speeds[(current + 1) % speeds.length];
@@ -210,15 +383,16 @@ class AudioLinguaApp {
     }
     
     openExportModal() {
-        document.getElementById('modal-export').classList.add('active');
+        const modal = document.getElementById('modal-export');
+        if (modal) modal.classList.add('active');
     }
     
     closeExportModal() {
-        document.getElementById('modal-export').classList.remove('active');
+        const modal = document.getElementById('modal-export');
+        if (modal) modal.classList.remove('active');
     }
     
     downloadFiles() {
-        // Simulate download
         alert('📥 Файлы загружаются...\n\nВ реальной версии здесь будет скачивание:\n• audio.mp3\n• subtitles.srt\n• vocabulary.pdf');
         this.closeExportModal();
     }
@@ -226,7 +400,15 @@ class AudioLinguaApp {
     resetToUpload() {
         this.isPlaying = false;
         this.currentSentence = 0;
+        this.lessonData = null;
+        this.lessonId = null;
         this.goToStep('upload');
+    }
+    
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
     sleep(ms) {
