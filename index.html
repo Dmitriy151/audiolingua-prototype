@@ -18,7 +18,7 @@
                 <a href="#" class="nav-link">Словарь</a>
             </nav>
             <div class="user-menu">
-                <button class="btn btn-secondary">Войти</button>
+                <button class="btn btn-secondary" type="button">Войти</button>
             </div>
         </div>
     </header>
@@ -32,9 +32,9 @@
                 
                 <div class="upload-card">
                     <div class="upload-tabs">
-                        <button class="tab active" data-tab="paste">Вставить текст</button>
-                        <button class="tab" data-tab="file">Загрузить файл</button>
-                        <button class="tab" data-tab="url">URL статьи</button>
+                        <button class="tab active" data-tab="paste" type="button">Вставить текст</button>
+                        <button class="tab" data-tab="file" type="button">Загрузить файл</button>
+                        <button class="tab" data-tab="url" type="button">URL статьи</button>
                     </div>
                     
                     <div class="tab-content active" id="tab-paste">
@@ -47,24 +47,24 @@
                         <div class="text-stats">
                             <span>📊 4 предложения</span>
                             <span>✍️ 52 слова</span>
-                            <span>⏱️ ~2 мин</span>
+                            <span>⏱️ ~1 мин</span>
                         </div>
                     </div>
                     
                     <div class="tab-content" id="tab-file">
                         <div class="file-drop-zone">
                             <div class="file-icon">📁</div>
-                            <p>Перетащите файл сюда или <button class="btn-link">выберите</button></p>
+                            <p>Перетащите файл сюда или <button class="btn-link" type="button">выберите</button></p>
                             <p class="file-hint">Поддерживаются: TXT, PDF, EPUB (до 10 МБ)</p>
                         </div>
                     </div>
                     
                     <div class="tab-content" id="tab-url">
                         <input type="url" class="url-input" placeholder="https://example.com/article">
-                        <button class="btn btn-secondary">Загрузить</button>
+                        <button class="btn btn-secondary" type="button">Загрузить</button>
                     </div>
                     
-                    <button class="btn btn-primary btn-large" id="btn-next-settings">
+                    <button class="btn btn-primary btn-large" id="btn-next-settings" type="button">
                         Далее: Настройки →
                     </button>
                 </div>
@@ -79,17 +79,18 @@
                         <h3>🎤 Голоса</h3>
                         <div class="setting-row">
                             <label>Оригинал (EN)</label>
-                            <select class="select">
-                                <option>Emma (British, Female)</option>
-                                <option>James (American, Male)</option>
-                                <option>Sophie (Neutral, Female)</option>
+                            <select class="select" id="voice-en">
+                                <option value="nick">Nick (Male, Neutral)</option>
+                                <option value="eric">Eric (Male, Casual)</option>
+                                <option value="jane">Jane (Female, Neutral)</option>
                             </select>
                         </div>
                         <div class="setting-row">
                             <label>Перевод (RU)</label>
-                            <select class="select">
-                                <option>Ольга (Neutral, Female)</option>
-                                <option>Дмитрий (Male)</option>
+                            <select class="select" id="voice-ru">
+                                <option value="alena">Алёна (Female, Neutral)</option>
+                                <option value="filipp">Филипп (Male, Neutral)</option>
+                                <option value="ermil">Ермил (Male, Casual)</option>
                             </select>
                         </div>
                     </div>
@@ -99,20 +100,20 @@
                         <div class="setting-row">
                             <label>Скорость воспроизведения</label>
                             <div class="speed-control">
-                                <button class="speed-btn">0.8x</button>
-                                <button class="speed-btn active">1.0x</button>
-                                <button class="speed-btn">1.2x</button>
+                                <button class="speed-btn" data-speed="0.8" type="button">0.8x</button>
+                                <button class="speed-btn active" data-speed="1.0" type="button">1.0x</button>
+                                <button class="speed-btn" data-speed="1.2" type="button">1.2x</button>
                             </div>
                         </div>
                         <div class="setting-row">
                             <label>
-                                <input type="checkbox" checked> 
+                                <input type="checkbox" id="chk-explanations" checked> 
                                 Включить пояснения сложных выражений
                             </label>
                         </div>
                         <div class="setting-row">
                             <label>
-                                <input type="checkbox" checked> 
+                                <input type="checkbox" id="chk-repeat" checked> 
                                 Автоматический повтор трудных предложений
                             </label>
                         </div>
@@ -120,8 +121,8 @@
                 </div>
                 
                 <div class="settings-actions">
-                    <button class="btn btn-secondary" id="btn-back-upload">← Назад</button>
-                    <button class="btn btn-primary" id="btn-generate">
+                    <button class="btn btn-secondary" id="btn-back-upload" type="button">← Назад</button>
+                    <button class="btn btn-primary" id="btn-generate" type="button">
                         🚀 Сгенерировать аудиоурок
                     </button>
                 </div>
@@ -130,19 +131,19 @@
             <!-- Step 3: Generation Progress -->
             <section id="step-progress" class="step">
                 <div class="progress-container">
-                    <div class="progress-icon">⏳</div>
-                    <h2>Генерация аудиоурока</h2>
-                    <p>Это займёт около 2-3 минут</p>
+                    <div class="spinner" id="generation-spinner"></div>
+                    <div class="progress-icon" id="progress-icon">⏳</div>
+                    <h2 id="progress-title">Генерация аудиоурока</h2>
+                    <p id="progress-status">Это займёт около 1-2 минут</p>
                     
                     <div class="progress-bar">
                         <div class="progress-fill" id="progress-fill"></div>
                     </div>
                     
                     <div class="progress-steps">
-                        <div class="progress-step active" id="step-1">✓ Сегментация текста</div>
-                        <div class="progress-step" id="step-2">→ Перевод предложений</div>
-                        <div class="progress-step" id="step-3">→ Генерация пояснений</div>
-                        <div class="progress-step" id="step-4">→ Синтез речи</div>
+                        <div class="progress-step" id="step-1">📡 Отправка запроса</div>
+                        <div class="progress-step" id="step-2">🔄 Генерация аудио</div>
+                        <div class="progress-step" id="step-3">📥 Загрузка файлов</div>
                     </div>
                     
                     <p class="progress-note">Вы можете закрыть эту страницу — мы отправим уведомление, когда всё будет готово</p>
@@ -152,86 +153,38 @@
             <!-- Step 4: Player -->
             <section id="step-player" class="step">
                 <div class="player-header">
-                    <button class="btn btn-secondary btn-small" id="btn-new-lesson">+ Новый урок</button>
+                    <button class="btn btn-secondary btn-small" id="btn-new-lesson" type="button">+ Новый урок</button>
                     <h2>Урок #1</h2>
                     <div class="lesson-actions">
-                        <button class="btn btn-secondary btn-small" id="btn-export">📥 Экспорт</button>
-                        <button class="btn btn-secondary btn-small">❤️ В избранное</button>
+                        <button class="btn btn-secondary btn-small" id="btn-export" type="button">📥 Экспорт</button>
+                        <button class="btn btn-secondary btn-small" type="button">❤️ В избранное</button>
                     </div>
                 </div>
                 
                 <div class="player-container">
                     <!-- Audio Controls -->
                     <div class="audio-controls">
-                        <button class="control-btn" id="btn-prev-sentence">⏮</button>
-                        <button class="control-btn btn-play" id="btn-play">▶</button>
-                        <button class="control-btn" id="btn-next-sentence">⏭</button>
+                        <button class="control-btn" id="btn-prev-sentence" type="button">⏮</button>
+                        <button class="control-btn btn-play" id="btn-play" type="button">▶</button>
+                        <button class="control-btn" id="btn-next-sentence" type="button">⏭</button>
                         <div class="time-display">
                             <span id="current-time">0:00</span> / <span id="total-time">2:15</span>
                         </div>
                         <div class="speed-toggle">
-                            <button class="speed-toggle-btn" id="btn-speed">1.0x</button>
+                            <button class="speed-toggle-btn" id="btn-speed" type="button">1.0x</button>
                         </div>
                     </div>
                     
                     <!-- Text Display -->
                     <div class="text-display">
-                        <div class="sentence-block active" data-index="0">
-                            <div class="sentence-original">The rain poured down relentlessly.</div>
-                            <div class="sentence-translation">Дождь лил не переставая.</div>
-                            <div class="sentence-explanation">
-                                <span class="explain-icon">ℹ️</span>
-                                <span class="explain-text">"Pour down" — идиома, означающая сильный, непрерывный ливень</span>
-                            </div>
-                        </div>
-                        
-                        <div class="sentence-block" data-index="1">
-                            <div class="sentence-original">Sarah looked out the window and sighed.</div>
-                            <div class="sentence-translation">Сара выглянула в окно и вздохнула.</div>
-                            <div class="sentence-explanation hidden">
-                                <span class="explain-icon">ℹ️</span>
-                                <span class="explain-text">"Look out" — выглянуть, высунуться (из окна, машины)</span>
-                            </div>
-                        </div>
-                        
-                        <div class="sentence-block" data-index="2">
-                            <div class="sentence-original">She had been waiting for this moment for years.</div>
-                            <div class="sentence-translation">Она ждала этого момента годами.</div>
-                            <div class="sentence-explanation hidden">
-                                <span class="explain-icon">ℹ️</span>
-                                <span class="explain-text">Past Perfect Continuous — действие длилось в прошлом до другого момента</span>
-                            </div>
-                        </div>
-                        
-                        <div class="sentence-block" data-index="3">
-                            <div class="sentence-original">Finally, she could start her new job in London.</div>
-                            <div class="sentence-translation">Наконец, она могла начать свою новую работу в Лондоне.</div>
-                            <div class="sentence-explanation hidden">
-                                <span class="explain-icon">ℹ️</span>
-                                <span class="explain-text">"Finally" — наконец, в конце концов (после долгого ожидания)</span>
-                            </div>
-                        </div>
+                        <!-- Карточки с предложениями и аудио будут рендериться динамически -->
                     </div>
                     
                     <!-- Vocabulary -->
                     <div class="vocabulary-panel">
                         <h3>📚 Словарь урока</h3>
-                        <div class="vocab-list">
-                            <div class="vocab-item">
-                                <span class="vocab-word">relentlessly</span>
-                                <span class="vocab-translation">неумолимо, без остановки</span>
-                                <button class="vocab-btn">🔊</button>
-                            </div>
-                            <div class="vocab-item">
-                                <span class="vocab-word">to sigh</span>
-                                <span class="vocab-translation">вздыхать</span>
-                                <button class="vocab-btn">🔊</button>
-                            </div>
-                            <div class="vocab-item">
-                                <span class="vocab-word">dream come true</span>
-                                <span class="vocab-translation">мечта, которая сбылась</span>
-                                <button class="vocab-btn">🔊</button>
-                            </div>
+                        <div class="vocab-list" id="vocab-list">
+                            <!-- Словарь рендерится динамически -->
                         </div>
                     </div>
                 </div>
@@ -244,7 +197,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Экспорт урока</h2>
-                <button class="modal-close">&times;</button>
+                <button class="modal-close" type="button">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="export-options">
@@ -273,13 +226,12 @@
                         </div>
                     </label>
                 </div>
-                <button class="btn btn-primary btn-large" id="btn-download">Скачать</button>
+                <button class="btn btn-primary btn-large" id="btn-download" type="button">Скачать</button>
             </div>
         </div>
     </div>
 
     <script src="js/mock-data.js"></script>
     <script src="js/app.js"></script>
-
 </body>
 </html>
