@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AudioLingua - Аудиоуроки с переводом</title>
+    <title>AudioLingua - Аудиокниги с переводом</title>
     <link rel="stylesheet" href="css/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -13,9 +13,9 @@
         <div class="container">
             <div class="logo">🎧 AudioLingua</div>
             <nav class="nav">
-                <a href="#" class="nav-link active">Создать урок</a>
-                <a href="#" class="nav-link">Мои уроки</a>
-                <a href="#" class="nav-link">Словарь</a>
+                <a href="#" class="nav-link active">Создать главу</a>
+                <a href="#" class="nav-link" id="nav-merge-book">📚 Склеить книгу</a>
+                <a href="#" class="nav-link">Мои проекты</a>
             </nav>
             <div class="user-menu">
                 <button class="btn btn-secondary" type="button">Войти</button>
@@ -27,8 +27,8 @@
         <div class="container">
             <!-- Step 1: Upload Text -->
             <section id="step-upload" class="step active">
-                <h1>Создать новый аудиоурок</h1>
-                <p class="subtitle">Загрузите текст на английском, и мы создадим аудио с переводом</p>
+                <h1>Создать новую главу</h1>
+                <p class="subtitle">Загрузите текст на английском — мы создадим аудио с переводом и пояснениями</p>
                 
                 <div class="upload-card">
                     <div class="upload-tabs">
@@ -41,13 +41,14 @@
                         <textarea 
                             id="text-input" 
                             class="text-input" 
-                            placeholder="Вставьте ваш текст здесь...&#10;&#10;Пример: The rain poured down relentlessly. Sarah looked out the window and sighed. She had been waiting for this moment for years."
-                            rows="10">The rain poured down relentlessly. Sarah looked out the window and sighed. She had been waiting for this moment for years. Finally, she could start her new job in London. It was a dream come true, but also terrifying.</textarea>
+                            placeholder="Вставьте текст главы здесь...&#10;&#10;Пример: The rain poured down relentlessly. Sarah looked out the window and sighed. She had been waiting for this moment for years."
+                            rows="12">The rain poured down relentlessly. Sarah looked out the window and sighed. She had been waiting for this moment for years. Finally, she could start her new job in London. It was a dream come true, but also terrifying.</textarea>
                         
                         <div class="text-stats">
-                            <span>📊 4 предложения</span>
-                            <span>✍️ 52 слова</span>
-                            <span>⏱️ ~1 мин</span>
+                            <span>📊 <span id="stat-sentences">4</span> предл.</span>
+                            <span>✍️ <span id="stat-words">52</span> слов</span>
+                            <span>📦 ~<span id="stat-chunks">2</span> сегментов</span>
+                            <span>⏱️ ~<span id="stat-time">1</span> мин</span>
                         </div>
                     </div>
                     
@@ -97,6 +98,15 @@
                     
                     <div class="setting-card">
                         <h3>⚡ Параметры</h3>
+                        
+                        <div class="setting-row">
+                            <label>Предложений в одном сегменте</label>
+                            <input type="number" id="chunk-size" value="3" min="1" max="10" class="select">
+                            <small style="color: var(--text-secondary); display: block; margin-top: 0.25rem;">
+                                Сервис будет читать и переводить по <strong id="chunk-preview">3</strong> предложения за раз
+                            </small>
+                        </div>
+                        
                         <div class="setting-row">
                             <label>Скорость воспроизведения</label>
                             <div class="speed-control">
@@ -105,16 +115,11 @@
                                 <button class="speed-btn" data-speed="1.2" type="button">1.2x</button>
                             </div>
                         </div>
+                        
                         <div class="setting-row">
                             <label>
                                 <input type="checkbox" id="chk-explanations" checked> 
                                 Включить пояснения сложных выражений
-                            </label>
-                        </div>
-                        <div class="setting-row">
-                            <label>
-                                <input type="checkbox" id="chk-repeat" checked> 
-                                Автоматический повтор трудных предложений
                             </label>
                         </div>
                     </div>
@@ -123,7 +128,7 @@
                 <div class="settings-actions">
                     <button class="btn btn-secondary" id="btn-back-upload" type="button">← Назад</button>
                     <button class="btn btn-primary" id="btn-generate" type="button">
-                        🚀 Сгенерировать аудиоурок
+                        🚀 Сгенерировать главу
                     </button>
                 </div>
             </section>
@@ -133,8 +138,8 @@
                 <div class="progress-container">
                     <div class="spinner" id="generation-spinner"></div>
                     <div class="progress-icon" id="progress-icon">⏳</div>
-                    <h2 id="progress-title">Генерация аудиоурока</h2>
-                    <p id="progress-status">Это займёт около 1-2 минут</p>
+                    <h2 id="progress-title">Генерация аудиоглавы</h2>
+                    <p id="progress-status">Это займёт около 1-3 минут</p>
                     
                     <div class="progress-bar">
                         <div class="progress-fill" id="progress-fill"></div>
@@ -142,8 +147,8 @@
                     
                     <div class="progress-steps">
                         <div class="progress-step" id="step-1">📡 Отправка запроса</div>
-                        <div class="progress-step" id="step-2">🔄 Генерация аудио</div>
-                        <div class="progress-step" id="step-3">📥 Загрузка файлов</div>
+                        <div class="progress-step" id="step-2">🔄 Генерация аудио (чанки)</div>
+                        <div class="progress-step" id="step-3">🔗 Склейка главы</div>
                     </div>
                     
                     <p class="progress-note">Вы можете закрыть эту страницу — мы отправим уведомление, когда всё будет готово</p>
@@ -153,20 +158,25 @@
             <!-- Step 4: Player -->
             <section id="step-player" class="step">
                 <div class="player-header">
-                    <button class="btn btn-secondary btn-small" id="btn-new-lesson" type="button">+ Новый урок</button>
-                    <h2>Урок #1</h2>
+                    <button class="btn btn-secondary btn-small" id="btn-new-lesson" type="button">+ Новая глава</button>
+                    <h2 id="player-title">Глава #1</h2>
                     <div class="lesson-actions">
                         <button class="btn btn-secondary btn-small" id="btn-export" type="button">📥 Экспорт</button>
                         <button class="btn btn-secondary btn-small" type="button">❤️ В избранное</button>
                     </div>
                 </div>
                 
+                <!-- Кнопка скачивания готовой главы -->
+                <a id="btn-download-chapter" class="btn btn-primary" download style="display: none; margin-bottom: 1rem;">
+                    📥 Скачать главу (MP3)
+                </a>
+                
                 <div class="player-container">
                     <!-- Audio Controls -->
                     <div class="audio-controls">
-                        <button class="control-btn" id="btn-prev-sentence" type="button">⏮</button>
+                        <button class="control-btn" id="btn-prev-chunk" type="button">⏮</button>
                         <button class="control-btn btn-play" id="btn-play" type="button">▶</button>
-                        <button class="control-btn" id="btn-next-sentence" type="button">⏭</button>
+                        <button class="control-btn" id="btn-next-chunk" type="button">⏭</button>
                         <div class="time-display">
                             <span id="current-time">0:00</span> / <span id="total-time">2:15</span>
                         </div>
@@ -175,14 +185,14 @@
                         </div>
                     </div>
                     
-                    <!-- Text Display -->
+                    <!-- Text Display (чанки вместо отдельных предложений) -->
                     <div class="text-display">
-                        <!-- Карточки с предложениями и аудио будут рендериться динамически -->
+                        <!-- Карточки с сегментами и аудио будут рендериться динамически -->
                     </div>
                     
                     <!-- Vocabulary -->
                     <div class="vocabulary-panel">
-                        <h3>📚 Словарь урока</h3>
+                        <h3>📚 Словарь главы</h3>
                         <div class="vocab-list" id="vocab-list">
                             <!-- Словарь рендерится динамически -->
                         </div>
@@ -196,7 +206,7 @@
     <div id="modal-export" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Экспорт урока</h2>
+                <h2>Экспорт главы</h2>
                 <button class="modal-close" type="button">&times;</button>
             </div>
             <div class="modal-body">
@@ -205,8 +215,8 @@
                         <input type="checkbox" checked>
                         <div class="export-icon">🎵</div>
                         <div class="export-info">
-                            <div class="export-title">Аудио MP3</div>
-                            <div class="export-desc">Все предложения с паузами</div>
+                            <div class="export-title">Аудио главы (MP3)</div>
+                            <div class="export-desc">Полная глава с паузами между сегментами</div>
                         </div>
                     </label>
                     <label class="export-option">
@@ -214,19 +224,49 @@
                         <div class="export-icon">📄</div>
                         <div class="export-info">
                             <div class="export-title">Субтитры SRT</div>
-                            <div class="export-desc">Для синхронизации с текстом</div>
+                            <div class="export-desc">Для синхронизации текста и аудио</div>
                         </div>
                     </label>
                     <label class="export-option">
                         <input type="checkbox">
                         <div class="export-icon">📖</div>
                         <div class="export-info">
-                            <div class="export-title">Текст с переводом</div>
-                            <div class="export-desc">PDF с параллельным текстом</div>
+                            <div class="export-title">Текст с переводом (PDF)</div>
+                            <div class="export-desc">Параллельный текст для чтения</div>
                         </div>
                     </label>
                 </div>
                 <button class="btn btn-primary btn-large" id="btn-download" type="button">Скачать</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Merge Book -->
+    <div id="modal-merge-book" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📚 Склеить аудиокнигу</h2>
+                <button class="modal-close" type="button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 1rem; color: var(--text-secondary);">
+                    Выберите главы, которые хотите объединить в одну аудиокнигу:
+                </p>
+                
+                <div id="chapters-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 1.5rem;">
+                    <p style="color: var(--text-secondary); font-style: italic;">
+                        Сначала создайте хотя бы одну главу
+                    </p>
+                </div>
+                
+                <div class="setting-row">
+                    <label>Название аудиокниги</label>
+                    <input type="text" id="book-title" class="text-input" placeholder="Моя аудиокнига" value="audiobook" style="margin-bottom: 1rem;">
+                </div>
+                
+                <button class="btn btn-primary btn-large" id="btn-merge-chapters" type="button" style="width: 100%;">
+                    🔗 Склеить выбранные главы
+                </button>
             </div>
         </div>
     </div>

@@ -24,3 +24,6 @@ output/
 # OS
 .DS_Store
 Thumbs.db
+
+otcheot.md
+analyze_audio.py
