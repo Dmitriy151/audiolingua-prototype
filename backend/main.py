@@ -122,7 +122,7 @@ def merge_audio_files(file_paths: list, output_path: str) -> None:
             for fpath in file_paths:
                 with open(fpath, "rb") as infile:
                     outfile.write(infile.read())
-        print(f"✅ Binary merge complete: {output_path}")
+        print(f"✅ Binary merge complete: {output_path}") 
 # 8. Разбиение текста на предложения
 def split_sentences(text: str) -> list:
     return [s.strip() for s in re.split(r'(?<=[.!?])\s+', text) if s.strip()]
